@@ -1,0 +1,32 @@
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import BaggingClassifier, AdaBoostClassifier, GradientBoostingClassifier, VotingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
+# Load and split data
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+scaler = StandardScaler().fit(X_train)
+X_train, X_test = scaler.transform(X_train), scaler.transform(X_test)
+
+# Ensemble models with adjusted parameters
+models = {
+    "Bagging": BaggingClassifier(DecisionTreeClassifier(max_depth=3), n_estimators=50, random_state=42),
+    "AdaBoost": AdaBoostClassifier(DecisionTreeClassifier(max_depth=1), n_estimators=50, random_state=42),
+    "Gradient Boosting": GradientBoostingClassifier(n_estimators=50, max_depth=3, random_state=42),
+    "Stacking": VotingClassifier(estimators=[
+        ('lr', LogisticRegression(random_state=42)),
+        ('rf', RandomForestClassifier(n_estimators=50, max_depth=3, random_state=42)),
+        ('svc', SVC(probability=True, C=0.5, random_state=42))
+    ], voting='soft')
+}
+
+# Fit, predict, and evaluate
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+    print(f"{name} Accuracy: {accuracy_score(y_test, preds):.4f}")
